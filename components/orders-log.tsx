@@ -41,6 +41,7 @@ export default function OrdersLog() {
     const handleOrderCompleted = () => {
       loadOrders()
     }
+    
 
     window.addEventListener("order-completed", handleOrderCompleted)
     return () => window.removeEventListener("order-completed", handleOrderCompleted)

@@ -28,13 +28,20 @@ export default function Activities() {
       icon: "🎓",
       color: "bg-yellow-100",
     },
+    {
+      id: 5,
+      title: "Dạy tiếng anh ",
+      description: "Tổ chức các lớp học miễn phí, dạy kỹ năng sống cho học sinh",
+      icon: "🎓",
+      color: "bg-yellow-100",
+    },
   ]
 
   return (
     <section id="activities" className="py-16 md:py-24 px-4 bg-white">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Các hoạt động tình nguyện</h2>
+          <h2 className="text-6xl md:text-5xl font-bold text-gray-900 mb-4">Các hoạt động tình nguyện</h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Tham gia các hoạt động ý nghĩa và tạo thay đổi tích cực cho cộng đồng
           </p>
