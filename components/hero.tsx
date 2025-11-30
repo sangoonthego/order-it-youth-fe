@@ -121,9 +121,8 @@ export default function Hero() {
             style={{ animationDelay: "0.2s" }}
           >
             Cùng nhau tạo nên một mùa xuân ý nghĩa. Tham gia hoạt động tình nguyện và ủng hộ các dự án cộng đồng với sức
-            mạnh chung.
+            mạnh chung từ Liên chi Đoàn khoa CNTT.
           </p>
-
           <div className="flex flex-col sm:flex-row gap-4 pt-4 animate-fadeInUp" style={{ animationDelay: "0.3s" }}>
             <Link href="#marketplace">
               <Button className="group bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white px-8 py-3 text-lg font-semibold rounded-lg transition-all duration-300 shadow-elevated hover:shadow-glow-blue transform hover:scale-105">
