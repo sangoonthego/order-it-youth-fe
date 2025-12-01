@@ -9,6 +9,8 @@ import { ChevronRight, Copy, Check, Trash2, Home, ShoppingCart } from "lucide-re
 import { useCart } from "@/hooks/useCart"
 import { useCheckoutApi } from "@/hooks/useCheckoutApi"
 import type { CheckoutFormData } from "@/types/checkout"
+import type { CartItem } from "@/types/cart"
+import type { OrderResponseDto } from "@/lib/api/generated/models"
 
 const FULFILLMENT_TYPE_MAP = {
   delivery: "DELIVERY",
@@ -102,6 +104,20 @@ export default function Checkout() {
         return
       }
 
+      saveOrderToLocalStorage({
+        backendOrder: order,
+        cart,
+        customer: {
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          address: formData.address,
+          note: formData.notes,
+          deliveryType: formData.deliveryType,
+        },
+        paymentMethod: paymentMethodParam === "VIETQR" ? "vietqr" : "cash",
+      })
+
       setPaymentMethod(paymentMethodParam === "VIETQR" ? "vietqr" : "cash")
 
       if (paymentMethodParam === "VIETQR") {
@@ -139,28 +155,79 @@ export default function Checkout() {
     setStep(2)
   }
 
-  const saveOrder = (method: "vietqr" | "cash") => {
-    const orderId = `ORDER_${Date.now()}`
-    const newOrder = {
-      id: orderId,
-      items: cart,
-      total,
-      customerName: formData.name,
-      customerEmail: formData.email,
-      customerPhone: formData.phone,
-      customerAddress: formData.address,
-      deliveryType: formData.deliveryType,
-      status: "pending" as const,
-      paymentMethod: method,
-      createdAt: new Date().toISOString(),
+  type LocalOrderStatus = "pending" | "confirmed" | "shipped" | "delivered" | "cancelled"
+
+  interface LocalOrder {
+    id: string
+    backendCode?: string
+    items: CartItem[]
+    total: number
+    customerName: string
+    customerEmail: string
+    customerPhone: string
+    customerAddress?: string
+    deliveryType?: "delivery" | "pickup"
+    status: LocalOrderStatus
+    paymentMethod?: "vietqr" | "cash"
+    createdAt: string
+  }
+
+  type SaveOrderParams = {
+    backendOrder?: OrderResponseDto
+    cart: CartItem[]
+    customer: {
+      name: string
+      phone: string
+      email?: string
+      address?: string
+      note?: string
+      deliveryType: "delivery" | "pickup"
+    }
+    paymentMethod: "vietqr" | "cash"
+    status?: LocalOrderStatus
+  }
+
+  const saveOrderToLocalStorage = (params: SaveOrderParams) => {
+    if (typeof window === "undefined") {
+      return null
     }
 
-    const existingOrders = JSON.parse(localStorage.getItem("orders") || "[]")
-    const updatedOrders = [newOrder, ...existingOrders]
-    localStorage.setItem("orders", JSON.stringify(updatedOrders))
+    const { backendOrder, cart, customer, paymentMethod, status = "pending" } = params
+    const existing = window.localStorage.getItem("orders")
+    let orders: LocalOrder[] = []
 
-    console.log("[v0] Order saved successfully:", orderId)
-    return newOrder
+    if (existing) {
+      try {
+        const parsed = JSON.parse(existing)
+        if (Array.isArray(parsed)) {
+          orders = parsed
+        }
+      } catch (error) {
+        console.error("[saveOrderToLocalStorage] Failed to parse local orders", error)
+      }
+    }
+
+    const totalOrder = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    const createdAt = new Date().toISOString()
+    const localOrder: LocalOrder = {
+      id: backendOrder?.code ?? `ORDER_${Date.now()}`,
+      backendCode: backendOrder?.code,
+      items: cart,
+      total: totalOrder,
+      customerName: customer.name,
+      customerEmail: customer.email ?? "",
+      customerPhone: customer.phone,
+      customerAddress: customer.address,
+      deliveryType: customer.deliveryType,
+      status,
+      paymentMethod,
+      createdAt,
+    }
+
+    orders.unshift(localOrder)
+    window.localStorage.setItem("orders", JSON.stringify(orders))
+    window.dispatchEvent(new CustomEvent("order-completed", { detail: localOrder }))
+    return localOrder
   }
 
   const handlePaymentSelect = (method: "vietqr" | "cash") => {
@@ -168,13 +235,23 @@ export default function Checkout() {
       setPaymentMethod("vietqr")
       setStep(3)
     } else if (method === "cash") {
-      const newOrder = saveOrder("cash")
+      const newOrder = saveOrderToLocalStorage({
+        cart,
+        customer: {
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          address: formData.address,
+          note: formData.notes,
+          deliveryType: formData.deliveryType,
+        },
+        paymentMethod: "cash",
+      })
       setPaymentMethod("cash")
       setShowConfetti(true)
 
       // Clear cart after saving order
       clearCart()
-      window.dispatchEvent(new CustomEvent("order-completed", { detail: newOrder }))
 
       setOrderConfirmed(true)
       setTimeout(() => setStep(4), 800)
@@ -182,13 +259,23 @@ export default function Checkout() {
   }
 
   const handleCompleteOrder = () => {
-    const newOrder = saveOrder("vietqr")
+    const newOrder = saveOrderToLocalStorage({
+      cart,
+      customer: {
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        address: formData.address,
+        note: formData.notes,
+        deliveryType: formData.deliveryType,
+      },
+      paymentMethod: "vietqr",
+    })
     setShowConfetti(true)
     setOrderConfirmed(true)
 
     // Clear cart after saving order
     clearCart()
-    window.dispatchEvent(new CustomEvent("order-completed", { detail: newOrder }))
 
     setTimeout(() => setStep(4), 800)
   }
