@@ -7,19 +7,12 @@ import { Button } from "@/components/ui/button"
 import Navigation from "@/components/navigation"
 import { ChevronRight, Copy, Check, Trash2, Home, ShoppingCart } from "lucide-react"
 import { useCart } from "@/hooks/useCart"
-
-interface CheckoutData {
-  name: string
-  phone: string
-  email: string
-  address: string
-  notes: string
-  deliveryType: "delivery" | "pickup"
-}
+import { useCheckout } from "@/hooks/useCheckout"
+import type { CheckoutFormData } from "@/types/checkout"
 
 export default function Checkout() {
   const [step, setStep] = useState(1)
-  const [formData, setFormData] = useState<CheckoutData>({
+  const [formData, setFormData] = useState<CheckoutFormData>({
     name: "",
     phone: "",
     email: "",
@@ -32,6 +25,7 @@ export default function Checkout() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [orderConfirmed, setOrderConfirmed] = useState(false)
   const { cart, removeItem, updateQuantity, clearCart, totalPrice } = useCart()
+  const { submitCheckout } = useCheckout()
 
   const handleRemoveFromCart = (productId: string) => {
     removeItem(productId)
