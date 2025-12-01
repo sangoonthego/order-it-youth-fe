@@ -7,8 +7,13 @@ import { Button } from "@/components/ui/button"
 import Navigation from "@/components/navigation"
 import { ChevronRight, Copy, Check, Trash2, Home, ShoppingCart } from "lucide-react"
 import { useCart } from "@/hooks/useCart"
-import { useCheckout } from "@/hooks/useCheckout"
+import { useCheckoutApi } from "@/hooks/useCheckoutApi"
 import type { CheckoutFormData } from "@/types/checkout"
+
+const FULFILLMENT_TYPE_MAP = {
+  delivery: "DELIVERY",
+  pickup: "PICKUP_SCHOOL",
+} as const
 
 export default function Checkout() {
   const [step, setStep] = useState(1)
@@ -25,7 +30,14 @@ export default function Checkout() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [orderConfirmed, setOrderConfirmed] = useState(false)
   const { cart, removeItem, updateQuantity, clearCart, totalPrice } = useCart()
-  const { submitCheckout } = useCheckout()
+  const {
+    paymentIntent,
+    isSubmitting,
+    apiError,
+    setApiError,
+    checkout,
+    fetchPaymentIntent,
+  } = useCheckoutApi()
 
   const handleRemoveFromCart = (productId: string) => {
     removeItem(productId)
@@ -41,6 +53,67 @@ export default function Checkout() {
   }
 
   const total = totalPrice
+  const formatVnd = (value: number) =>
+    new Intl.NumberFormat("vi-VN").format(value)
+
+  const validateCheckoutForm = () => {
+    if (!formData.name || !formData.phone) {
+      setApiError("Vui lòng nhập đầy đủ thông tin bắt buộc")
+      return false
+    }
+
+    if (formData.deliveryType === "delivery" && !formData.address) {
+      setApiError("Vui lòng nhập địa chỉ giao hàng")
+      return false
+    }
+
+    if (cart.length === 0) {
+      setApiError("Giỏ hàng của bạn đang trống.")
+      return false
+    }
+
+    return true
+  }
+
+  const submitCheckout = async (paymentMethodParam: "VIETQR" | "CASH") => {
+    if (!validateCheckoutForm()) {
+      return
+    }
+
+    try {
+      const order = await checkout(() => ({
+        full_name: formData.name,
+        phone: formData.phone,
+        email: formData.email || undefined,
+        address: formData.address || undefined,
+        note: formData.notes || undefined,
+        fulfillment_type: FULFILLMENT_TYPE_MAP[formData.deliveryType],
+        payment_method: paymentMethodParam,
+        items: cart.map((item) => ({
+          quantity: item.quantity,
+          price_version: item.priceVersion ?? 1,
+          client_price_vnd: item.clientPriceVnd ?? item.price,
+          variant_id: item.variantId,
+          combo_id: item.comboId,
+        })),
+      }))
+
+      if (!order) {
+        return
+      }
+
+      setPaymentMethod(paymentMethodParam === "VIETQR" ? "vietqr" : "cash")
+
+      if (paymentMethodParam === "VIETQR") {
+        await fetchPaymentIntent(order.code)
+        setStep(3)
+      } else {
+        setStep(4)
+      }
+    } catch {
+      // already handled via hook errors
+    }
+  }
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text)
@@ -107,12 +180,6 @@ export default function Checkout() {
       setTimeout(() => setStep(4), 800)
     }
   }
-
-  const referenceCode = `ORDER_${Date.now().toString().slice(-6)}`
-  const bankAccount = "9704xxxxxxxx1234"
-  const bankName = "MB Bank - NAPAS 247"
-  const accountHolder = "CLB Tình nguyện CNTT"
-  const transferContent = `${referenceCode} - ${formData.name}`
 
   const handleCompleteOrder = () => {
     const newOrder = saveOrder("vietqr")
@@ -359,90 +426,126 @@ export default function Checkout() {
               <div className="card-premium rounded-2xl shadow-elevated p-8 animate-fadeInUp">
                 <h2 className="text-3xl font-bold text-foreground mb-8 text-center">Quét VietQR để ủng hộ</h2>
 
-                <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl p-8 mb-8 flex flex-col items-center border-2 border-primary/20">
-                  <div className="w-48 h-48 bg-white rounded-lg p-4 shadow-elevated mb-6 flex items-center justify-center border-2 border-primary/10">
-                    <div className="text-center">
-                      <div className="text-7xl mb-2 animate-pulse-glow">📲</div>
-                      <p className="text-sm text-muted-foreground font-semibold">QR Code VietQR</p>
-                    </div>
+                {!paymentIntent ? (
+                  <div className="rounded-2xl border border-border/50 bg-muted/50 p-6 text-center space-y-3">
+                    <p className="text-muted-foreground font-semibold">
+                      Đang tải thông tin thanh toán...
+                    </p>
+                    {isSubmitting && <p className="text-sm text-foreground">Đang kết nối đến hệ thống...</p>}
+                    {apiError && <p className="text-sm text-red-500">{apiError}</p>}
                   </div>
-                  <div className="text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent text-center">
-                    {(total / 1000).toFixed(0)} <span className="text-3xl">đ</span>
-                  </div>
-                </div>
-
-                <div className="space-y-4 mb-8">
-                  {[
-                    { label: "Ngân hàng", value: bankName, key: "bank" },
-                    { label: "Số tài khoản", value: bankAccount, key: "account" },
-                    { label: "Chủ tài khoản", value: accountHolder, key: "holder" },
-                    { label: "Nội dung chuyển khoản", value: transferContent, key: "content", special: true },
-                    { label: "Số tiền", value: `${(total / 1000).toFixed(0)}.000đ`, key: "amount" },
-                  ].map((item) => (
-                    <div
-                      key={item.key}
-                      className={`rounded-lg p-4 border-2 transition-all duration-300 ${
-                        item.special
-                          ? "bg-secondary/20 border-secondary/40 hover:border-secondary/60"
-                          : "bg-muted/30 border-muted/40 hover:border-primary/40"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-semibold text-muted-foreground">{item.label}</span>
-                        <button
-                          onClick={() => handleCopy(item.value, item.key)}
-                          className="text-primary hover:text-accent font-semibold text-sm flex items-center gap-1 transition-colors"
-                        >
-                          {copied === item.key ? <Check size={16} /> : <Copy size={16} />}
-                        </button>
+                ) : (
+                  <>
+                    <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl p-8 mb-8 flex flex-col items-center border-2 border-primary/20">
+                      <div className="w-48 h-48 bg-white rounded-lg p-4 shadow-elevated mb-6 flex items-center justify-center border-2 border-primary/10">
+                        <div className="text-center">
+                          <div className="text-7xl mb-2 animate-pulse-glow">📲</div>
+                          <p className="text-sm text-muted-foreground font-semibold">QR Code VietQR</p>
+                        </div>
                       </div>
-                      <p className="font-semibold text-foreground text-lg font-mono">{item.value}</p>
+                      <div className="text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent text-center">
+                        {formatVnd(paymentIntent.amount_vnd)} <span className="text-3xl">đ</span>
+                      </div>
                     </div>
-                  ))}
-                </div>
 
-                <div className="bg-secondary/20 rounded-lg p-6 mb-8 border-l-4 border-secondary">
-                  <h3 className="font-bold text-foreground mb-3">Hướng dẫn chuyển khoản:</h3>
-                  <ul className="space-y-2 text-muted-foreground text-sm">
-                    <li>• Mở app ngân hàng → Quét QR hoặc nhập thông tin bên trên</li>
-                    <li>• Kiểm tra sẵn Số tiền & Nội dung chuyển đúng như trên</li>
-                    <li>• Xác nhận chuyển → Đơn sẽ được xác nhận ngay</li>
-                  </ul>
-                </div>
+                    <div className="space-y-4 mb-8">
+                      {[
+                        {
+                          label: "Ngân hàng",
+                          value: paymentIntent.bank.name || paymentIntent.bank.code,
+                          key: "bank",
+                        },
+                        { label: "Mã ngân hàng", value: paymentIntent.bank.code, key: "code" },
+                        {
+                          label: "Số tài khoản",
+                          value: paymentIntent.bank.account_number,
+                          key: "account",
+                        },
+                        {
+                          label: "Chủ tài khoản",
+                          value: paymentIntent.bank.account_name,
+                          key: "holder",
+                        },
+                        {
+                          label: "Nội dung chuyển khoản",
+                          value: paymentIntent.transfer_content,
+                          key: "content",
+                          special: true,
+                        },
+                        {
+                          label: "Số tiền",
+                          value: `${formatVnd(paymentIntent.amount_vnd)} đ`,
+                          key: "amount",
+                        },
+                      ].map((item) => (
+                        <div
+                          key={item.key}
+                          className={`rounded-lg p-4 border-2 transition-all duration-300 ${
+                            item.special
+                              ? "bg-secondary/20 border-secondary/40 hover:border-secondary/60"
+                              : "bg-muted/30 border-muted/40 hover:border-primary/40"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-semibold text-muted-foreground">{item.label}</span>
+                            <button
+                              onClick={() => handleCopy(item.value, item.key)}
+                              className="text-primary hover:text-accent font-semibold text-sm flex items-center gap-1 transition-colors"
+                            >
+                              {copied === item.key ? <Check size={16} /> : <Copy size={16} />}
+                            </button>
+                          </div>
+                          <p className="font-semibold text-foreground text-lg font-mono">{item.value}</p>
+                        </div>
+                      ))}
+                    </div>
 
-                <div className="space-y-3">
-                  <Button
-                    onClick={handleCompleteOrder}
-                    className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white font-semibold py-3 rounded-lg transition-all duration-300 shadow-medium hover:shadow-elevated"
-                  >
-                    ✓ Tôi đã chuyển khoản
-                  </Button>
-                  <div className="flex gap-3">
-                    <button className="flex-1 text-primary font-semibold py-2 rounded-lg hover:bg-primary/5 transition-all duration-300">
-                      Lưu mã QR
-                    </button>
-                    <button className="flex-1 text-primary font-semibold py-2 rounded-lg hover:bg-primary/5 transition-all duration-300">
-                      Sao chép tất cả
-                    </button>
-                  </div>
-                </div>
+                    {apiError && <p className="text-sm text-red-500 mb-4">{apiError}</p>}
 
-                <div className="mt-6 p-4 bg-muted/50 rounded-lg border border-border">
-                  <details className="cursor-pointer group">
-                    <summary className="font-semibold text-foreground hover:text-primary transition-colors">
-                      Không quét được? → Hướng dẫn nhập tay
-                    </summary>
-                    <div className="mt-3 text-sm text-muted-foreground space-y-2">
-                      <p>Nếu QR không quét được, bạn có thể nhập thông tin thủ công:</p>
-                      <ul className="ml-4 space-y-1 font-mono">
-                        <li>• Số TK: {bankAccount}</li>
-                        <li>• Ngân hàng: {bankName}</li>
-                        <li>• Số tiền: {(total / 1000).toFixed(0)}.000đ</li>
-                        <li>• Nội dung: {transferContent}</li>
+                    <div className="bg-secondary/20 rounded-lg p-6 mb-8 border-l-4 border-secondary">
+                      <h3 className="font-bold text-foreground mb-3">Hướng dẫn chuyển khoản:</h3>
+                      <ul className="space-y-2 text-muted-foreground text-sm">
+                        <li>• Mở app ngân hàng → Quét QR hoặc nhập thông tin bên trên</li>
+                        <li>• Kiểm tra sẵn Số tiền & Nội dung chuyển đúng như trên</li>
+                        <li>• Xác nhận chuyển → Đơn sẽ được xác nhận ngay</li>
                       </ul>
                     </div>
-                  </details>
-                </div>
+
+                    <div className="space-y-3">
+                      <Button
+                        onClick={handleCompleteOrder}
+                        className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white font-semibold py-3 rounded-lg transition-all duration-300 shadow-medium hover:shadow-elevated"
+                      >
+                        ✓ Tôi đã chuyển khoản
+                      </Button>
+                      <div className="flex gap-3">
+                        <button className="flex-1 text-primary font-semibold py-2 rounded-lg hover:bg-primary/5 transition-all duration-300">
+                          Lưu mã QR
+                        </button>
+                        <button className="flex-1 text-primary font-semibold py-2 rounded-lg hover:bg-primary/5 transition-all duration-300">
+                          Sao chép tất cả
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 p-4 bg-muted/50 rounded-lg border border-border">
+                      <details className="cursor-pointer group">
+                        <summary className="font-semibold text-foreground hover:text-primary transition-colors">
+                          Không quét được? → Hướng dẫn nhập tay
+                        </summary>
+                        <div className="mt-3 text-sm text-muted-foreground space-y-2">
+                          <p>Nếu QR không quét được, bạn có thể nhập thông tin thủ công:</p>
+                          <ul className="ml-4 space-y-1 font-mono">
+                            <li>• Số TK: {paymentIntent.bank.account_number}</li>
+                            <li>• Ngân hàng: {paymentIntent.bank.name || paymentIntent.bank.code}</li>
+                            <li>• Số tiền: {formatVnd(paymentIntent.amount_vnd)} đ</li>
+                            <li>• Nội dung: {paymentIntent.transfer_content}</li>
+                          </ul>
+                        </div>
+                      </details>
+                    </div>
+                  </>
+                )}
 
                 <Button onClick={() => setStep(2)} variant="outline" className="w-full mt-6">
                   Quay lại - Chọn phương thức khác
