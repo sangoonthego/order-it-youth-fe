@@ -30,9 +30,9 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState<"vietqr" | "cash">("vietqr")
   const [copied, setCopied] = useState<string | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
-  const [orderConfirmed, setOrderConfirmed] = useState(false)
   const { cart, removeItem, updateQuantity, clearCart, totalPrice } = useCart()
   const {
+    backendOrder,
     paymentIntent,
     isSubmitting,
     apiError,
@@ -118,17 +118,27 @@ export default function Checkout() {
         paymentMethod: paymentMethodParam === "VIETQR" ? "vietqr" : "cash",
       })
 
+      clearCart()
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("cart-updated"))
+      }
+
       setPaymentMethod(paymentMethodParam === "VIETQR" ? "vietqr" : "cash")
 
       if (paymentMethodParam === "VIETQR") {
         await fetchPaymentIntent(order.code)
         setStep(3)
       } else {
+        setShowConfetti(true)
         setStep(4)
       }
     } catch {
       // already handled via hook errors
     }
+  }
+
+  const handleSelectPayment = async (method: "VIETQR" | "CASH") => {
+    await submitCheckout(method)
   }
 
   const handleCopy = (text: string, label: string) => {
@@ -151,7 +161,7 @@ export default function Checkout() {
       alert("Vui lòng chọn sản phẩm trước khi thanh toán")
       return
     }
-    console.log("[v0] Step 1 validation passed, moving to step 2")
+    console.log(" Step 1 validation passed, moving to step 2")
     setStep(2)
   }
 
@@ -230,54 +240,9 @@ export default function Checkout() {
     return localOrder
   }
 
-  const handlePaymentSelect = (method: "vietqr" | "cash") => {
-    if (method === "vietqr") {
-      setPaymentMethod("vietqr")
-      setStep(3)
-    } else if (method === "cash") {
-      const newOrder = saveOrderToLocalStorage({
-        cart,
-        customer: {
-          name: formData.name,
-          phone: formData.phone,
-          email: formData.email,
-          address: formData.address,
-          note: formData.notes,
-          deliveryType: formData.deliveryType,
-        },
-        paymentMethod: "cash",
-      })
-      setPaymentMethod("cash")
-      setShowConfetti(true)
-
-      // Clear cart after saving order
-      clearCart()
-
-      setOrderConfirmed(true)
-      setTimeout(() => setStep(4), 800)
-    }
-  }
-
   const handleCompleteOrder = () => {
-    const newOrder = saveOrderToLocalStorage({
-      cart,
-      customer: {
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        address: formData.address,
-        note: formData.notes,
-        deliveryType: formData.deliveryType,
-      },
-      paymentMethod: "vietqr",
-    })
     setShowConfetti(true)
-    setOrderConfirmed(true)
-
-    // Clear cart after saving order
-    clearCart()
-
-    setTimeout(() => setStep(4), 800)
+    setStep(4)
   }
 
   const Confetti = () => {
@@ -467,8 +432,11 @@ export default function Checkout() {
                   <h2 className="text-3xl font-bold text-foreground mb-8">Chọn phương thức thanh toán</h2>
 
                   <button
-                    onClick={() => handlePaymentSelect("vietqr")}
-                    className="w-full mb-6 p-6 border-2 border-primary/30 rounded-xl hover:bg-primary/5 hover:border-primary/60 transition-all duration-300 text-left hover:shadow-medium group"
+                    onClick={() => handleSelectPayment("VIETQR")}
+                    disabled={isSubmitting}
+                    className={`w-full mb-6 p-6 border-2 border-primary/30 rounded-xl transition-all duration-300 text-left hover:shadow-medium group ${
+                      isSubmitting ? "opacity-50 cursor-not-allowed" : "hover:bg-primary/5 hover:border-primary/60"
+                    }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -477,7 +445,7 @@ export default function Checkout() {
                             KHUYẾN NGHỊ
                           </span>
                           <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-                            Quét VietQR
+                            {isSubmitting ? "Đang xử lý..." : "Quét VietQR"}
                           </h3>
                         </div>
                         <p className="text-muted-foreground ml-12">Quét mã, chuyển khoản trong 1 bước</p>
@@ -487,19 +455,28 @@ export default function Checkout() {
                   </button>
 
                   <button
-                    onClick={() => handlePaymentSelect("cash")}
-                    className="w-full p-6 border-2 border-muted rounded-xl hover:bg-muted/50 hover:border-primary/30 transition-all duration-300 text-left hover:shadow-medium group"
+                    onClick={() => handleSelectPayment("CASH")}
+                    disabled={isSubmitting}
+                    className={`w-full p-6 border-2 border-muted rounded-xl transition-all duration-300 text-left hover:shadow-medium group ${
+                      isSubmitting ? "opacity-50 cursor-not-allowed" : "hover:bg-muted/50 hover:border-primary/30"
+                    }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
-                          Tiền mặt khi nhận
+                          {isSubmitting ? "Đang xử lý..." : "Tiền mặt khi nhận"}
                         </h3>
                         <p className="text-muted-foreground">Dành cho bạn không dùng ngân hàng số</p>
                       </div>
                       <div className="text-3xl group-hover:scale-110 transition-transform">💵</div>
                     </div>
                   </button>
+
+                  {apiError && (
+                    <p className="text-sm text-red-500 mt-4">
+                      {apiError}
+                    </p>
+                  )}
                 </div>
 
                 <Button onClick={() => setStep(1)} variant="outline" className="w-full">
@@ -512,6 +489,11 @@ export default function Checkout() {
             {step === 3 && (
               <div className="card-premium rounded-2xl shadow-elevated p-8 animate-fadeInUp">
                 <h2 className="text-3xl font-bold text-foreground mb-8 text-center">Quét VietQR để ủng hộ</h2>
+                {backendOrder && (
+                  <p className="text-center text-sm text-muted-foreground mb-4">
+                    Mã đơn hàng: <span className="font-semibold text-foreground">{backendOrder.code}</span>
+                  </p>
+                )}
 
                 {!paymentIntent ? (
                   <div className="rounded-2xl border border-border/50 bg-muted/50 p-6 text-center space-y-3">
@@ -648,6 +630,9 @@ export default function Checkout() {
                   <h2 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-4">
                     Cảm ơn bạn!
                   </h2>
+                  {backendOrder && (
+                    <p className="text-sm text-muted-foreground mb-2">Mã đơn: {backendOrder.code}</p>
+                  )}
                   <p className="text-muted-foreground text-lg mb-4">
                     {paymentMethod === "vietqr"
                       ? "Đơn hàng của bạn đã được ghi nhận. Chúng tôi sẽ xác nhận sớm nhất."
@@ -668,7 +653,16 @@ export default function Checkout() {
                 <div className="bg-muted/30 rounded-lg p-6 mb-8 border border-border">
                   <h3 className="font-bold text-foreground mb-4">Tóm tắt đơn hàng</h3>
                   <div className="space-y-3 mb-4">
-                    {cart.length === 0 ? (
+                    {backendOrder ? (
+                      backendOrder.items.map((item, index) => (
+                        <div key={`${item.title}-${index}`} className="flex justify-between text-foreground">
+                          <span>
+                            {item.title} × {item.quantity}
+                          </span>
+                          <span className="font-semibold">{formatVnd(item.line_total_vnd)} đ</span>
+                        </div>
+                      ))
+                    ) : cart.length === 0 ? (
                       <p className="text-muted-foreground">Không có sản phẩm trong đơn này</p>
                     ) : (
                       cart.map((item) => (
@@ -683,7 +677,9 @@ export default function Checkout() {
                   </div>
                   <div className="border-t border-border pt-4 flex justify-between font-bold text-lg text-foreground">
                     <span>Tổng tiền:</span>
-                    <span className="text-primary">{(total / 1000).toFixed(0)}K</span>
+                    <span className="text-primary">
+                      {backendOrder ? `${formatVnd(backendOrder.grand_total_vnd)} đ` : `${(total / 1000).toFixed(0)}K`}
+                    </span>
                   </div>
                 </div>
 
