@@ -1,69 +1,37 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ShoppingCart, Check } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
 import { useCart } from "@/hooks/useCart"
+import { useProducts } from "@/hooks/useProducts"
 import type { CartItem } from "@/types/cart"
 
 export default function Marketplace() {
-  const [products] = useState([
-    {
-      id: 1,
-      name: "Áo phông tình nguyện",
-      price: 150000,
-      image: "👕",
-      description: "Áo phông chất lượng cao với logo Xuân Tình Nguyện",
-      sold: 234,
-    },
-    {
-      id: 2,
-      name: "Cốc giữ nhiệt",
-      price: 120000,
-      image: "☕",
-      description: "Cốc thân thiện môi trường, giữ nhiệt tốt",
-      sold: 156,
-    },
-    {
-      id: 3,
-      name: "Dây tư",
-      price: 80000,
-      image: "📿",
-      description: "Vòng tay may mắn ủng hộ tình nguyện",
-      sold: 412,
-    },
-    {
-      id: 4,
-      name: "Túi vải tote",
-      price: 200000,
-      image: "👜",
-      description: "Túi vải bền bỉ, tiện dụng cho sinh viên",
-      sold: 189,
-    },
-  ])
-
-  const [addedProduct, setAddedProduct] = useState<number | null>(null)
+  const { products, isLoading, error, reload } = useProducts()
+  const [addedProduct, setAddedProduct] = useState<string | null>(null)
   const { cart, addItem, updateQuantity } = useCart()
 
-  const handleAddToCart = (productId: number) => {
+  const handleAddToCart = (productId: string) => {
     const product = products.find((p) => p.id === productId)
     if (!product) return
 
-    const formattedId = String(product.id)
-    const existing = cart.find((item) => item.id === formattedId)
+    const existing = cart.find((item) => item.id === product.id)
 
     if (existing) {
-      updateQuantity(formattedId, existing.quantity + 1)
+      updateQuantity(product.id, existing.quantity + 1)
     } else {
       const newItem: CartItem = {
-        id: formattedId,
+        id: product.id,
         name: product.name,
         price: product.price,
         quantity: 1,
-        image: product.image,
+        image: product.emoji ?? "🛍️",
+        variantId: product.id,
+        priceVersion: product.priceVersion,
         clientPriceVnd: product.price,
-        priceVersion: 1,
       }
 
       addItem(newItem)
@@ -85,20 +53,57 @@ export default function Marketplace() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {products.map((product, index) => (
-            <div
-              key={product.id}
-              className="group card-premium rounded-2xl overflow-hidden border-2 border-primary/10 hover:border-primary/40 transition-all duration-300 hover:shadow-elevated animate-fadeInUp"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
+        <div className="text-center mb-16 animate-fadeInUp">
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4 text-balance">🛍 Cửa hàng IT Youth</h2>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-light">
+            Mua sắm những sản phẩm ý nghĩa và ủng hộ cộng đồng tình nguyện
+          </p>
+          <div className="flex items-center justify-center gap-3 mt-4">
+            {error && <span className="text-sm text-red-500">{error}</span>}
+            <Button variant="outline" size="sm" onClick={reload} disabled={isLoading}>
+              Làm mới
+            </Button>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="card-premium rounded-2xl border-2 border-muted animate-pulse bg-gradient-to-br from-primary/5 to-transparent p-6 h-[320px]"
+              >
+                <div className="h-32 bg-muted rounded-xl mb-4" />
+                <div className="h-4 bg-muted rounded mb-2" />
+                <div className="h-4 bg-muted rounded w-2/3" />
+                <div className="mt-6 h-10 bg-gradient-to-r from-primary/40 to-accent/40 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : products.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-primary/40 p-12 text-center mb-12">
+            <p className="text-4xl mb-4">🛒</p>
+            <p className="text-lg text-muted-foreground">
+              Chưa có sản phẩm nào khả dụng. Vui lòng kiểm tra lại sau hoặc dùng nút “Làm mới”.
+            </p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {products.map((product, index) => (
+              <div
+                key={product.id}
+                className="group card-premium rounded-2xl overflow-hidden border-2 border-primary/10 hover:border-primary/40 transition-all duration-300 hover:shadow-elevated animate-fadeInUp"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
               <div className="bg-gradient-to-br from-primary/20 via-secondary/20 to-accent/20 h-48 flex items-center justify-center text-6xl group-hover:scale-110 transition-transform duration-300 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/0 to-transparent opacity-0 group-hover:opacity-10 transition-opacity" />
-                {product.image}
+                {product.emoji ?? "🛍️"}
               </div>
               <div className="p-5">
                 <h3 className="font-bold text-lg text-foreground mb-2 line-clamp-2">{product.name}</h3>
-                <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{product.description}</p>
+                <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                  {product.description ?? "Sản phẩm gây quỹ chính thức từ IT Youth"}
+                </p>
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <span className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -106,7 +111,7 @@ export default function Marketplace() {
                     </span>
                   </div>
                   <span className="text-xs font-semibold text-muted-foreground bg-muted px-3 py-1 rounded-full">
-                    {product.sold} bán
+                    Tồn: {product.stock}
                   </span>
                 </div>
                 <Button
@@ -131,8 +136,9 @@ export default function Marketplace() {
                 </Button>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link href="/checkout" className="flex-1 sm:flex-none">

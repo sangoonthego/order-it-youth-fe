@@ -445,12 +445,19 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
                           </div>
                         </div>
                       </div>
-                      <div className="text-right ml-4">
+                      <div className="text-right ml-4 flex flex-col items-end gap-2">
                         <p className="text-gray-500 text-sm">Tổng tiền</p>
                         <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
                           {(order.total / 1000).toFixed(0)}K
                         </p>
-                        <Eye size={20} className="text-blue-600 mt-2 ml-auto" />
+                        <Link
+                          href={`/my-orders/${order.backendCode ?? order.id}`}
+                          className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Eye size={16} />
+                          Xem chi tiết
+                        </Link>
                       </div>
                     </div>
                   </button>

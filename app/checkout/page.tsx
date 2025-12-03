@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import Navigation from "@/components/navigation"
 import { ChevronRight, Copy, Check, Trash2, Home, ShoppingCart } from "lucide-react"
@@ -11,12 +11,18 @@ import { useCheckoutApi } from "@/hooks/useCheckoutApi"
 import type { CheckoutFormData } from "@/types/checkout"
 import type { CartItem } from "@/types/cart"
 import type { LocalOrder, LocalOrderStatus } from "@/types/order"
-import type { OrderResponseDto } from "@/lib/api/generated/models"
+import type { OrderResponseDto, PaymentIntentResponseDto } from "@/lib/api/generated/models"
+import { buildVietQrUrl, generateVietQrImage } from "@/lib/payment-vietqr"
 
 const FULFILLMENT_TYPE_MAP = {
   delivery: "DELIVERY",
   pickup: "PICKUP_SCHOOL",
 } as const
+
+const getBankDisplayName = (bank: PaymentIntentResponseDto["bank"]) => {
+  const extra = bank as { name?: string; short_name?: string }
+  return extra.name ?? extra.short_name ?? bank.bank_code
+}
 
 export default function Checkout() {
   const [step, setStep] = useState(1)
@@ -31,6 +37,10 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState<"vietqr" | "cash">("vietqr")
   const [copied, setCopied] = useState<string | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [vietQrImage, setVietQrImage] = useState<string | null>(null)
+  const [vietQrError, setVietQrError] = useState<string | null>(null)
+  const [isGeneratingVietQr, setIsGeneratingVietQr] = useState(false)
+  const [vietQrRefreshKey, setVietQrRefreshKey] = useState(0)
   const { cart, removeItem, updateQuantity, clearCart, totalPrice } = useCart()
   const {
     backendOrder,
@@ -41,6 +51,60 @@ export default function Checkout() {
     checkout,
     fetchPaymentIntent,
   } = useCheckoutApi()
+
+  useEffect(() => {
+    if (!paymentIntent) {
+      setVietQrImage(null)
+      setVietQrError(null)
+      setIsGeneratingVietQr(false)
+      return
+    }
+
+    let cancelled = false
+
+    const generateQr = async () => {
+      setIsGeneratingVietQr(true)
+      setVietQrError(null)
+      try {
+        const result = await generateVietQrImage(paymentIntent)
+        if (cancelled) {
+          return
+        }
+        if (result.qrDataUrl) {
+          setVietQrImage(result.qrDataUrl)
+          setVietQrError(null)
+        } else {
+          setVietQrImage(null)
+          setVietQrError(result.error ?? "Không tạo được mã VietQR tự động.")
+        }
+      } catch {
+        if (cancelled) {
+          return
+        }
+        setVietQrImage(null)
+        setVietQrError("Không thể tạo mã VietQR vào lúc này.")
+      } finally {
+        if (!cancelled) {
+          setIsGeneratingVietQr(false)
+        }
+      }
+    }
+
+    generateQr()
+
+    return () => {
+      cancelled = true
+    }
+  }, [paymentIntent, vietQrRefreshKey])
+
+  const bankDisplayName =
+    paymentIntent !== null ? getBankDisplayName(paymentIntent.bank) : null
+  const bankDisplayWithCode =
+    paymentIntent && bankDisplayName
+      ? bankDisplayName === paymentIntent.bank.bank_code
+        ? bankDisplayName
+        : `${bankDisplayName} (${paymentIntent.bank.bank_code})`
+      : null
 
   const handleRemoveFromCart = (productId: string) => {
     removeItem(productId)
@@ -137,6 +201,13 @@ export default function Checkout() {
 
   const handleSelectPayment = async (method: "VIETQR" | "CASH") => {
     await submitCheckout(method)
+  }
+
+  const handleRegenerateVietQr = () => {
+    if (!paymentIntent || isGeneratingVietQr) {
+      return
+    }
+    setVietQrRefreshKey((prev) => prev + 1)
   }
 
   const handleCopy = (text: string, label: string) => {
@@ -484,50 +555,94 @@ export default function Checkout() {
 
                 {!paymentIntent ? (
                   <div className="rounded-2xl border border-border/50 bg-muted/50 p-6 text-center space-y-3">
-                    <p className="text-muted-foreground font-semibold">
-                      Đang tải thông tin thanh toán...
-                    </p>
+                    <p className="text-muted-foreground font-semibold">Đang tải thông tin thanh toán...</p>
                     {isSubmitting && <p className="text-sm text-foreground">Đang kết nối đến hệ thống...</p>}
                     {!isSubmitting && !apiError && (
-                      <p className="text-sm text-muted-foreground">Không tải được thông tin, vui lòng thử lại hoặc quay lại bước trước.</p>
+                      <p className="text-sm text-muted-foreground">
+                        Không tải được thông tin, vui lòng thử lại hoặc quay lại bước trước.
+                      </p>
                     )}
                     {apiError && <p className="text-sm text-red-500">{apiError}</p>}
                     {backendOrder && !isSubmitting && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fetchPaymentIntent(backendOrder.code)}
-                      >
+                      <Button variant="outline" size="sm" onClick={() => fetchPaymentIntent(backendOrder.code)}>
                         Thử lại
                       </Button>
                     )}
                   </div>
                 ) : (
                   <>
-                    <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl p-8 mb-8 flex flex-col items-center border-2 border-primary/20">
-                      <div className="w-48 h-48 bg-white rounded-lg p-4 shadow-elevated mb-6 flex items-center justify-center border-2 border-primary/10">
-                        <div className="text-center">
-                          <div className="text-7xl mb-2 animate-pulse-glow">📲</div>
-                          <p className="text-sm text-muted-foreground font-semibold">QR Code VietQR</p>
+                    {(() => {
+                      const fallbackQrUrl = buildVietQrUrl(paymentIntent)
+                      const qrUrl = vietQrImage ?? fallbackQrUrl
+
+                      return (
+                        <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl p-8 mb-6 flex flex-col items-center border-2 border-primary/20">
+                          <div className="w-64 h-64 bg-white rounded-lg p-4 shadow-elevated mb-6 flex items-center justify-center border-2 border-primary/10">
+                            {qrUrl ? (
+                              <img
+                                src={qrUrl}
+                                alt="Mã QR thanh toán VietQR"
+                                className="h-full w-full object-contain rounded-lg"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="text-center">
+                                <div className="text-7xl mb-2 animate-pulse-glow">📲</div>
+                                <p className="text-sm text-muted-foreground font-semibold">QR Code VietQR</p>
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent text-center">
+                            {formatVnd(paymentIntent.amount_vnd)} <span className="text-3xl">đ</span>
+                          </div>
+                          {isGeneratingVietQr && (
+                            <p className="mt-3 text-sm text-muted-foreground text-center">
+                              Đang tạo mã VietQR từ thông tin đơn hàng...
+                            </p>
+                          )}
+                          {vietQrError && (
+                            <div className="mt-3 text-center space-y-2">
+                              <p className="text-sm text-red-500">{vietQrError}</p>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleRegenerateVietQr}
+                                disabled={isGeneratingVietQr}
+                              >
+                                Thử tạo lại mã QR
+                              </Button>
+                            </div>
+                          )}
+                          {!qrUrl && !isGeneratingVietQr && !vietQrError && (
+                            <p className="mt-3 text-sm text-red-500 text-center max-w-sm">
+                              Không tạo được mã QR tự động vì thiếu thông tin ngân hàng. Vui lòng nhập theo hướng dẫn
+                              bên dưới.
+                            </p>
+                          )}
                         </div>
-                      </div>
-                      <div className="text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent text-center">
-                        {formatVnd(paymentIntent.amount_vnd)} <span className="text-3xl">đ</span>
-                      </div>
+                      )
+                    })()}
+
+                    <div className="text-center text-sm text-muted-foreground mb-6 space-y-1">
+                      <p>Quét mã QR bằng ứng dụng ngân hàng hỗ trợ VietQR để điền sẵn thông tin.</p>
+                      <p>
+                        Nội dung chuyển khoản:{" "}
+                        <span className="font-mono font-semibold">{paymentIntent.transfer_content}</span>
+                      </p>
                     </div>
 
                     <div className="space-y-4 mb-8">
                       {[
                         {
                           label: "Ngân hàng",
-                          value: paymentIntent.bank.name || paymentIntent.bank.code,
+                          value: bankDisplayWithCode ?? paymentIntent.bank.bank_code,
                           key: "bank",
                         },
-                        { label: "Mã ngân hàng", value: paymentIntent.bank.code, key: "code" },
                         {
                           label: "Số tài khoản",
-                          value: paymentIntent.bank.account_number,
+                          value: paymentIntent.bank.account_no,
                           key: "account",
+                          copyable: true,
                         },
                         {
                           label: "Chủ tài khoản",
@@ -539,6 +654,7 @@ export default function Checkout() {
                           value: paymentIntent.transfer_content,
                           key: "content",
                           special: true,
+                          copyable: true,
                         },
                         {
                           label: "Số tiền",
@@ -556,14 +672,16 @@ export default function Checkout() {
                         >
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-semibold text-muted-foreground">{item.label}</span>
-                            <button
-                              onClick={() => handleCopy(item.value, item.key)}
-                              className="text-primary hover:text-accent font-semibold text-sm flex items-center gap-1 transition-colors"
-                            >
-                              {copied === item.key ? <Check size={16} /> : <Copy size={16} />}
-                            </button>
+                            {item.copyable ? (
+                              <button
+                                onClick={() => handleCopy(item.value, item.key)}
+                                className="text-primary hover:text-accent font-semibold text-sm flex items-center gap-1 transition-colors"
+                              >
+                                {copied === item.key ? <Check size={16} /> : <Copy size={16} />}
+                              </button>
+                            ) : null}
                           </div>
-                          <p className="font-semibold text-foreground text-lg font-mono">{item.value}</p>
+                          <p className="font-semibold text-foreground text-lg font-mono break-all">{item.value}</p>
                         </div>
                       ))}
                     </div>
@@ -575,7 +693,7 @@ export default function Checkout() {
                       <ul className="space-y-2 text-muted-foreground text-sm">
                         <li>• Mở app ngân hàng → Quét QR hoặc nhập thông tin bên trên</li>
                         <li>• Kiểm tra sẵn Số tiền & Nội dung chuyển đúng như trên</li>
-                        <li>• Xác nhận chuyển → Đơn sẽ được xác nhận ngay</li>
+                        <li>• Xác nhận chuyển → Đơn sẽ được xác nhận tự động</li>
                       </ul>
                     </div>
 
@@ -604,8 +722,8 @@ export default function Checkout() {
                         <div className="mt-3 text-sm text-muted-foreground space-y-2">
                           <p>Nếu QR không quét được, bạn có thể nhập thông tin thủ công:</p>
                           <ul className="ml-4 space-y-1 font-mono">
-                            <li>• Số TK: {paymentIntent.bank.account_number}</li>
-                            <li>• Ngân hàng: {paymentIntent.bank.name || paymentIntent.bank.code}</li>
+                            <li>• Số TK: {paymentIntent.bank.account_no}</li>
+                            <li>• Ngân hàng: {bankDisplayName ?? paymentIntent.bank.bank_code}</li>
                             <li>• Số tiền: {formatVnd(paymentIntent.amount_vnd)} đ</li>
                             <li>• Nội dung: {paymentIntent.transfer_content}</li>
                           </ul>
