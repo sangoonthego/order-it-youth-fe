@@ -106,7 +106,7 @@ export default function Hero() {
       <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center relative z-10">
         <div className="space-y-6">
           <div className="inline-block bg-gradient-to-r from-blue-100 to-pink-100 text-primary px-4 py-2 rounded-full text-sm font-semibold animate-fadeInUp shadow-soft border border-blue-200/50">
-            ✨ Xuân 2026 - Tình nguyện vì cộng đồng
+            ✨ Xuân Tình nguyện 2026 - Tình nguyện vì cộng đồng
           </div>
 
           <h1
