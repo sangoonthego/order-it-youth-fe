@@ -51,12 +51,12 @@ export default function Orders() {
   }, [])
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
+    <main className="min-h-screen from-blue-50 via-white to-pink-50">
       <Navigation />
 
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Đơn hàng của tôi</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Đơn hàng của bạn</h1>
           <p className="text-gray-600">Theo dõi và quản lý các đơn hàng ủng hộ của bạn</p>
         </div>
 

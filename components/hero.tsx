@@ -3,9 +3,10 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useEffect, useRef } from "react"
+import Image from "next/image"
 
 export default function Hero() {
-  const canvasRef = useRef(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -14,10 +15,19 @@ export default function Hero() {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight / 2
+    // Lấy phần tử cha (thẻ <section>) để đo chiều cao
+    const parentElement = canvas.parentElement as HTMLElement
+    if (!parentElement) return
 
-    const particles = []
+    const setupCanvas = () => {
+      // Đảm bảo Canvas có kích thước bằng section (min-h-screen)
+      canvas.width = parentElement.clientWidth
+      canvas.height = parentElement.clientHeight
+    }
+
+    setupCanvas()
+
+    const particles: Particle[] = []
     const particleCount = 50
 
     class Particle {
@@ -50,7 +60,7 @@ export default function Hero() {
       }
 
       draw(ctx: CanvasRenderingContext2D) {
-        ctx.fillStyle = `rgba(74, 144, 226, ${this.opacity})`
+        ctx.fillStyle = `rgba(165, 200, 88, ${this.opacity})` // primary pastel particles
         ctx.beginPath()
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2)
         ctx.fill()
@@ -62,8 +72,8 @@ export default function Hero() {
     }
 
     const animate = () => {
-      ctx.fillStyle = "rgba(255, 255, 255, 0.1)"
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      // Dùng clearRect để Canvas trong suốt, không che Background
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       particles.forEach((particle, index) => {
         if (particle.life <= 0) {
@@ -79,8 +89,7 @@ export default function Hero() {
     animate()
 
     const handleResize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight / 2
+      setupCanvas()
     }
 
     window.addEventListener("resize", handleResize)
@@ -88,88 +97,90 @@ export default function Hero() {
   }, [])
 
   return (
-    <section className="relative overflow-hidden pt-20 md:pt-32 pb-20 md:pb-32 px-4">
+    <section 
+      className="relative overflow-hidden min-h-screen flex flex-col justify-center items-center px-4"
+      style={{
+        backgroundImage: "url('/bg3.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "top",
+        // backgroundRepeat: "no-repeat"
+      }}
+    >
+      
+      {/* LỚP PHỦ ĐEN MỜ */}
+      <div className="absolute inset-0 bg-black/20 z-10" />
+
+      {/* Canvas */}
       <canvas ref={canvasRef} className="absolute inset-0 z-0" />
 
-      <div className="absolute inset-0 z-1">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-400 to-transparent rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" />
+      {/* Soft pastel blobs (Đặt z-index thấp hơn lớp phủ) */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-[#FCE8E7] rounded-full mix-blend-multiply blur-3xl opacity-30 animate-float" />
         <div
-          className="absolute top-0 right-1/4 w-96 h-96 bg-gradient-to-br from-pink-400 to-transparent rounded-full mix-blend-multiply filter blur-3xl opacity-20"
+          className="absolute top-1/3 right-1/3 w-96 h-96 bg-[#FCEDBE] rounded-full mix-blend-multiply blur-3xl opacity-30"
           style={{ animation: "float 4s ease-in-out infinite 2s" }}
         />
         <div
-          className="absolute -bottom-8 left-1/2 w-96 h-96 bg-gradient-to-br from-yellow-400 to-transparent rounded-full mix-blend-multiply filter blur-3xl opacity-20"
+          className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-[#D3E281] rounded-full mix-blend-multiply blur-3xl opacity-30"
           style={{ animation: "float 4s ease-in-out infinite 4s" }}
         />
       </div>
 
-      <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center relative z-10">
-        <div className="space-y-6">
-          <div className="inline-block bg-gradient-to-r from-blue-100 to-pink-100 text-primary px-4 py-2 rounded-full text-sm font-semibold animate-fadeInUp shadow-soft border border-blue-200/50">
-            ✨ Xuân Tình nguyện 2026 - Tình nguyện vì cộng đồng
-          </div>
+      {/* Content Centered (Đã điều chỉnh màu chữ sang trắng) */}
+      <div className="relative z-20 flex flex-col items-center text-center max-w-3xl space-y-6 py-20"> 
 
-          <h1
-            className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent leading-tight text-balance animate-fadeInUp"
-            style={{ animationDelay: "0.1s" }}
-          >
-            Xuân Tình Nguyện 2026
-          </h1>
+        {/* Tag */}
+        {/* <div className="inline-block bg-white/20 text-white px-4 py-2 rounded-full text-sm font-semibold animate-fadeInUp border border-white/40 shadow-sm backdrop-blur-sm">
+          Xuân 2026 - Tình nguyện vì cộng đồng
+        </div> */}
 
-          <p
-            className="text-xl text-muted-foreground leading-relaxed text-balance animate-fadeInUp font-light"
-            style={{ animationDelay: "0.2s" }}
-          >
-            Cùng nhau tạo nên một mùa xuân ý nghĩa. Tham gia hoạt động tình nguyện và ủng hộ các dự án cộng đồng với sức
-            mạnh chung từ Liên chi Đoàn khoa CNTT.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 pt-4 animate-fadeInUp" style={{ animationDelay: "0.3s" }}>
-            <Link href="#marketplace">
-              <Button className="group bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white px-8 py-3 text-lg font-semibold rounded-lg transition-all duration-300 shadow-elevated hover:shadow-glow-blue transform hover:scale-105">
-                <span className="flex items-center gap-2">
-                  Mua sắm hỗ trợ
-                  <span className="group-hover:translate-x-1 transition-transform">→</span>
-                </span>
-              </Button>
-            </Link>
-            <Button className="border-2 border-primary/40 hover:bg-primary/5 hover:border-primary/60 px-8 py-3 text-lg font-semibold rounded-lg transition-all duration-300 bg-white/40 backdrop-blur-sm text-foreground hover:text-primary">
-              Tìm hiểu thêm
+        {/* Title */}
+        {/* <h1
+          className="text-6xl md:text-7xl font-bold leading-tight animate-fadeInUp text-white"
+          style={{ animationDelay: "0.1s" }}
+        >
+          Xuân Tình Nguyện 2026
+        </h1> */}
+
+        {/* Description */}
+        {/* <p
+          className="text-xl leading-relaxed font-light animate-fadeInUp text-white/90"
+          style={{ animationDelay: "0.2s" }}
+        >
+          Cùng nhau tạo nên một mùa xuân ý nghĩa. Tham gia hoạt động tình nguyện và ủng hộ các dự án cộng đồng với sức mạnh chung từ Liên chi Đoàn khoa CNTT.
+        </p> */}
+
+        {/* <div className="bg-white border-r-3 inline-block animate-fadeInUp mb-0.5"> */}
+        <Image
+          src="/new_title2.svg"
+          alt="Xuân 2026 Logo"
+          width={580}
+          height={420}
+          className="mx-auto"
+        />
+        {/* </div> */}
+
+        {/* Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 mt-0.5 animate-fadeInUp" style={{ animationDelay: "0.3s" }}>
+          <Link href="#marketplace">
+            {/* Nút chính */}
+            <Button className="group bg-[#A5C858] hover:bg-[#92B94F] text-white px-8 py-3 text-lg font-semibold rounded-lg transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105">
+              <span className="flex items-center gap-2">
+                Mua sắm
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </span>
             </Button>
-          </div>
-        </div>
+          </Link>
 
-        <div className="relative h-96 md:h-full flex items-center justify-center">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-pink-400 rounded-3xl opacity-15 blur-3xl animate-float" />
-          <div
-            className="absolute inset-0 bg-gradient-to-tl from-yellow-300 to-pink-300 rounded-3xl opacity-10 blur-3xl"
-            style={{ animation: "float 4s ease-in-out infinite 1s" }}
-          />
-
-          <div className="relative h-96 w-full max-w-sm card-premium rounded-3xl flex items-center justify-center shadow-elevated hover:shadow-glow-blue transition-all duration-500 transform hover:scale-105 hover:-rotate-1">
-            <div className="text-center space-y-4 p-8 animate-slideInUp" style={{ animationDelay: "0.4s" }}>
-              <div
-                className="text-7xl animate-pulse-glow inline-block"
-                style={{ animation: "pulse-glow 2s ease-in-out infinite" }}
-              >
-                🌸
-              </div>
-              <p className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Mùa Xuân
-              </p>
-              <p className="text-muted-foreground font-medium text-lg">Ý nghĩa cộng đồng</p>
-              <div className="pt-4 text-sm text-muted-foreground">Hơn 500+ tình nguyện viên</div>
-            </div>
-          </div>
-
-          <div className="absolute top-12 -left-8 w-20 h-20 bg-gradient-to-br from-yellow-300 to-yellow-400 rounded-full opacity-60 blur-lg animate-float" />
-          <div
-            className="absolute bottom-12 -right-8 w-24 h-24 bg-gradient-to-br from-pink-300 to-pink-400 rounded-full opacity-60 blur-lg"
-            style={{ animation: "float 4s ease-in-out infinite 2s" }}
-          />
+          {/* Nút phụ */}
+          <Button className="border-2 border-[#A5C858] hover:bg-[#A5C858]/10 px-8 py-3 text-lg font-semibold rounded-lg transition-all duration-300 bg-white/10 backdrop-blur-sm text-white hover:text-white">
+            Tìm hiểu thêm
+          </Button>
         </div>
       </div>
-
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-60" />
+      
+      {/* Bottom highlight line (Giữ nguyên) */}
+      {/* NOTE: Nếu cần, có thể thêm lại Bottom highlight line, hiện tại đã bị xóa trong code gốc bạn gửi */}
     </section>
   )
 }

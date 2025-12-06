@@ -9,11 +9,11 @@ import Footer from "@/components/footer"
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50">
+    <main className="min-h-screen from-blue-50 via-white to-pink-50">
       <Navigation />
       <Hero />
       <Activities />
-      <Transparency />
+      {/* <Transparency /> */}
       <OrdersLog />
       <Marketplace />
       <Gallery />
