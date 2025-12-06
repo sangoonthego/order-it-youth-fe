@@ -1,43 +1,43 @@
-name: Deploy FE Shop
+name: Build & Deploy FE Shop
 
 on:
   push:
     branches:
-      - main   
+      - main
+
+env:
+  IMAGE_NAME: ghcr.io/${{ secrets.GHCR_USERNAME }}/oiy-fe-shop
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to GCP via SSH
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        run: |
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+
+      - name: Build & Push Docker image
+        run: |
+          TAG=latest
+          docker build -t $IMAGE_NAME:$TAG .
+          docker push $IMAGE_NAME:$TAG
+
+      - name: Deploy on VM via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          # Nếu key có passphrase:
-          # passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             set -e
 
-            echo ">>> Pull FE shop code"
-            cd /home/dhtphu05/order-it-youth_FrontEnd
-            git pull origin main
-
-            echo ">>> Ensure pnpm available"
-            if ! command -v pnpm >/dev/null 2>&1; then
-              corepack enable
-            fi
-
-            echo ">>> Install deps & generate orval"
-            pnpm install --frozen-lockfile
-            pnpm orval
-
-            echo ">>> Build & restart fe-shop container"
+            echo ">>> Pull latest fe-shop image"
             cd /home/dhtphu05
-            docker compose build fe-shop
+            docker compose pull fe-shop
             docker compose up -d fe-shop
 
-            echo ">>> Cleanup old images"
             docker image prune -f

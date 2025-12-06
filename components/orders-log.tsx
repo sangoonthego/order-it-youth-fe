@@ -42,7 +42,6 @@ export default function OrdersLog() {
       loadOrders()
     }
     
-
     window.addEventListener("order-completed", handleOrderCompleted)
     return () => window.removeEventListener("order-completed", handleOrderCompleted)
   }, [])
@@ -50,6 +49,9 @@ export default function OrdersLog() {
   if (loading || orders.length === 0) {
     return null
   }
+
+  const formatVnd = (value: number) =>
+      new Intl.NumberFormat("vi-VN").format(value)
 
   return (
     <section className="py-16 px-4">
@@ -86,8 +88,8 @@ export default function OrdersLog() {
               {/* Card Content */}
               <div className="p-5">
                 <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Người ủng hộ</p>
-                  <p className="font-bold text-gray-900">{order.customerName}</p>
+                  {/* <p className="text-sm font-medium text-gray-600 mb-1">Người ủng hộ</p> */}
+                  {/* <p className="font-bold text-gray-900">{order.customerName}</p> */}
                 </div>
 
                 {/* Items Summary */}
@@ -110,8 +112,8 @@ export default function OrdersLog() {
                 <div className="flex items-end justify-between pt-3 border-t border-gray-200">
                   <div>
                     <p className="text-xs text-gray-600 mb-1">Tổng tiền</p>
-                    <p className="text-2xl font-bold bg-clip-text text-transparent">
-                      {(order.total / 1000).toFixed(0)}K
+                    <p className="text-2xl font-bold bg-clip-text">
+                      {formatVnd(order.total)}đ
                     </p>
                   </div>
                   <div className="text-right">
@@ -130,13 +132,13 @@ export default function OrdersLog() {
 
         {/* CTA Link */}
         <div className="text-center pt-10">
-          <Link
+          {/* <Link
             href="/my-orders"
             className="inline-flex items-center gap-3 px-8 py-4 bg-[#a5c858] text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
           >
             Xem tất cả đơn hàng
             <ArrowRight size={20} />
-          </Link>
+          </Link> */}
         </div>
       </div>
 

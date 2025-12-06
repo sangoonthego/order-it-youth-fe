@@ -4,42 +4,50 @@ export default function Activities() {
   const softlime = "#D3E281";
   const rose = "#FCE8E7";
   const sand = "#FCEDBE";
+  const light = "#FFF8E7";
 
   const activities = [
     {
       id: 1,
-      title: "Ươm Mầm Khát Vọng Tương Lai",
-      description: "Góp những cuốn sách, chiếc áo, đồ dùng thân thương, nâng đỡ những ước mơ nhỏ bé của trẻ em vùng cao, mang hơi ấm tri thức đến mọi nẻo đường.",
-      icon: "📚",
+      title: "Thắp sáng đường quê",
+      description: "Cải thiện điều kiện đi lại vào ban đêm tại địa bàn, đảm bảo an toàn cho người dân.",
+      icon: "💡",
       color: leaf,
     },
     {
       id: 2,
-      title: "Sưởi Ấm Những Cuộc Đời An Yên",
-      description: "Dành thời gian ân cần thăm hỏi, trở thành người thân, và cùng nhau gìn giữ không gian sống sạch đẹp cho các cụ già neo đơn, mang lại sự trọn vẹn yêu thương.",
-      icon: "❤️",
+      title: "Dự án xã hội",
+      description: "Tổ chức buổi tuyên truyền nhằm tăng cường nhận thức của trẻ em về các loại tệ nạn xã hội. Đồng thời, tổ chức nấu ăn cho các em ăn.",
+      icon: "📚",
       color: softlime,
     },
     {
       id: 3,
-      title: "Vì Một Thế Giới Xanh",
-      description: "Cùng nhau thanh lọc môi trường, gieo thêm những mầm sắc xanh hy vọng, nâng cao ý thức bảo vệ vẻ đẹp của thiên nhiên.",
-      icon: "🌱",
+      title: "Đền ơn đáp nghĩa",
+      description: "Thăm gặp và tặng quà cho 5 hộ gia đình Mẹ Việt Nam Anh Hùng, Hội viên Hội Cựu Chiến binh, Cựu Thanh niên Xung phong có hoàn cảnh khó khăn. ",
+      icon: "❤️",
       color: peach,
     },
     {
       id: 4,
-      title: "Thắp Sáng Ngọn Lửa Tri Thức",
-      description: "Mang tri thức và kỹ năng sống làm hành trang, tổ chức các lớp học miễn phí như chìa khóa vàng, mở lối cho thế hệ trẻ tự tin bước vào tương lai.",
-      icon: "🎓",
+      title: "Mầm xanh tình nguyện",
+      description: "Xây dựng tuyến đường hoa trang trí cảnh quan phía trước và dọn dẹp vệ sinh khuôn viên tại Nghĩa Trang Liệt Sĩ địa phương.",
+      icon: "🌱",
       color: rose,
     },
     {
       id: 5,
-      title: "Chắp Cánh Ngôn Ngữ Yêu Thương",
-      description: "Dạy tiếng Anh không chỉ là ngôn ngữ, mà là cách chúng ta giúp các em vượt qua rào cản, tự tin mở ra một thế giới rộng lớn hơn.",
-      icon: "🌎",
+      title: "Không gian thể thao",
+      description: "Xây dựng khu vui chơi, giao lưu thể thao cho người dân địa phương tại Nhà văn hóa thôn.",
+      icon: "⚽",
       color: sand,
+    },
+    {
+      id: 6,
+      title: "Đêm trao quà và giao lưu văn hóa, văn nghệ",
+      description: "Tổ chức đêm giao lưu văn hóa, văn nghệ giữa tình nguyện viên và người dân địa phương, tổ chức đêm hội cho các em thiếu nhi. Trao các suất quà hỗ trợ cho các gia đình có hoàn cảnh khó khăn cũng như các em nhỏ.",
+      icon: "🎁",
+      color: light,
     },
   ];
 

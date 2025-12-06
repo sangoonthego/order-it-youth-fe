@@ -369,8 +369,8 @@ export default function Checkout() {
                 </div>
                 {s < 4 && (
                   <div
-                    className={`w-16 h-1 mx-2 transition-all duration-300 rounded-full ${                      s < step ? `bg-[${COLOR_PRIMARY}]` : "bg-gray-300"
-                    }`}                  />
+                    className={`w-16 h-1 mx-2 transition-all duration-300 rounded-full ${s < step ? `bg-[${COLOR_PRIMARY}]` : "bg-gray-300"
+                    }`}/>
                 )}
               </div>
             ))}
