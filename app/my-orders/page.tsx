@@ -10,6 +10,7 @@ import { Copy, Check, Download, Eye } from "lucide-react"
 import { useMyOrders } from "@/hooks/useMyOrders"
 import type { LocalOrder } from "@/types/order"
 import { mapOrderStatusToBadge, mapPaymentStatusToBadge } from "@/lib/order-status"
+import Image from "next/image"
 
 // Định nghĩa màu chủ đạo (Tương tự Checkout.tsx)
 const COLOR_PRIMARY = "#A5C858" 
@@ -272,7 +273,18 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
                         className={`flex items-center justify-between p-4 bg-[${COLOR_BG}50] rounded-xl border border-gray-200`}
                       >
                         <div className="flex items-center gap-4">
-                          <span className="text-4xl">{item.image}</span>
+                          
+                          {/* */}
+                          <div className="w-12 h-12 relative flex-shrink-0">
+                            <Image
+                              src={`/products/${item.image}.png`} 
+                              alt={item.name}
+                              layout="fill"
+                              objectFit="cover"
+                              className="rounded-full"
+                            />
+                          </div>
+                          
                           <div>
                             <p className="font-semibold text-gray-900">{item.name}</p>
                             <p className="text-sm text-gray-600">

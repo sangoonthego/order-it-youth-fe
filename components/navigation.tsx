@@ -80,9 +80,10 @@ export default function Navigation() {
 
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-8">
+          <Link href="/#charity-support" className={`${linkColor} transition`}>Ủng hộ</Link>
           <Link href="/#activities" className={`${linkColor} transition`}>Hoạt động</Link>
           <Link href="/#marketplace" className={`${linkColor} transition`}>Cửa hàng</Link>
-          <Link href="/#gallery" className={`${linkColor} transition`}>Khoảnh khắc</Link>
+          {/* <Link href="/#gallery" className={`${linkColor} transition`}>Khoảnh khắc</Link> */}
         </div>
 
         {/* Desktop Buttons */}
@@ -132,9 +133,10 @@ export default function Navigation() {
       {/* Mobile Menu */}
       {isOpen && (
         <div className="md:hidden pb-4 space-y-2 px-4 sm:px-6 lg:px-8">
+          <Link href="#charity-support" className="block px-4 py-2 hover:bg-blue-50 rounded-lg">Ủng hộ</Link>
           <Link href="#activities" className="block px-4 py-2 hover:bg-blue-50 rounded-lg">Hoạt động</Link>
           <Link href="#marketplace" className="block px-4 py-2 hover:bg-blue-50 rounded-lg">Cửa hàng</Link>
-          <Link href="#gallery" className="block px-4 py-2 hover:bg-blue-50 rounded-lg">Khoảnh khắc</Link>
+          {/* <Link href="#gallery" className="block px-4 py-2 hover:bg-blue-50 rounded-lg">Khoảnh khắc</Link> */}
           <Link href="/my-orders" className="block px-4 py-2 hover:bg-blue-50 rounded-lg">Đơn hàng</Link>
         </div>
       )}

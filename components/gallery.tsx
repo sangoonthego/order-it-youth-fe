@@ -61,7 +61,7 @@ export default function Gallery() {
                   backgroundColor: "#FCE8E7" // rose
                 }}
               >
-                {/* ⭐️ SỬ DỤNG IMAGE COMPONENT */}
+                {/*  */}
                 <Image
                   src={item.image} 
                   alt={item.title}

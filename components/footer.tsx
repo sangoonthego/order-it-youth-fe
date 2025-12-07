@@ -57,9 +57,9 @@ export default function Footer() {
           <div>
             <h3 className="text-slate-900 font-bold mb-4">Liên hệ</h3>
             <ul className="text-sm space-y-2 text-slate-500">
-              <li>Email: info@xuantinhnguyen.vn</li>
-              <li>Điện thoại: (84) 1234 5678</li>
-              <li>Địa chỉ: TP. Hồ Chí Minh</li>
+              <li>Email: endiezzhang13@gmail.com</li>
+              <li>Điện thoại: 0868 786 031</li>
+              <li>Địa chỉ: TP. Đà Nẵng</li>
             </ul>
           </div>
         </div>
