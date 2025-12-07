@@ -10,13 +10,23 @@ import { Copy, Check, Download, Eye } from "lucide-react"
 import { useMyOrders } from "@/hooks/useMyOrders"
 import type { LocalOrder } from "@/types/order"
 import { mapOrderStatusToBadge, mapPaymentStatusToBadge } from "@/lib/order-status"
+import Image from "next/image"
 
+// Định nghĩa màu chủ đạo (Tương tự Checkout.tsx)
+const COLOR_PRIMARY = "#A5C858" 
+const COLOR_ACCENT = "#F5B1AC" 
+const COLOR_SECONDARY = "#FCEDBE" 
+const COLOR_BG = "#FCE8E7" 
+const COLOR_SUCCESS = "#4CAF50" 
+const COLOR_ERROR = "#DC2626" // Dùng màu đỏ chuẩn cho lỗi
+
+// Vẫn giữ statusConfig vì nó sử dụng màu cố định, nhưng tôi sẽ chỉnh màu nền cảnh báo (pending)
 const statusConfig: Record<string, { color: string; label: string; icon: string }> = {
-  pending: { color: "bg-gradient-to-r from-amber-100 to-amber-200 text-amber-900", label: "Chờ xác nhận", icon: "⏳" },
-  confirmed: { color: "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-900", label: "Đã xác nhận", icon: "✅" },
-  shipped: { color: "bg-gradient-to-r from-purple-100 to-purple-200 text-purple-900", label: "Đang giao", icon: "📦" },
-  delivered: { color: "bg-gradient-to-r from-green-100 to-green-200 text-green-900", label: "Đã nhận", icon: "🎉" },
-  cancelled: { color: "bg-gradient-to-r from-red-100 to-red-200 text-red-900", label: "Đã huỷ", icon: "❌" },
+  pending: { color: "bg-amber-100 text-amber-900", label: "Chờ xác nhận", icon: "⏳" },
+  confirmed: { color: "bg-blue-100 text-blue-900", label: "Đã xác nhận", icon: "✅" },
+  shipped: { color: "bg-purple-100 text-purple-900", label: "Đang giao", icon: "📦" },
+  delivered: { color: "bg-green-100 text-green-900", label: "Đã nhận", icon: "🎉" },
+  cancelled: { color: "bg-red-100 text-red-900", label: "Đã huỷ", icon: "❌" },
 }
 
 export default function MyOrders() {
@@ -49,6 +59,7 @@ export default function MyOrders() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
+    // NOTE: Cần thay thế alert() bằng UI modal tùy chỉnh
     if (!searchPhone && !searchOrderId) {
       alert("Vui lòng nhập số điện thoại hoặc mã đơn")
       return
@@ -86,6 +97,9 @@ export default function MyOrders() {
     console.log("[v0] Order cancelled:", selectedOrder.id)
   }
 
+  const formatVnd = (value: number) =>
+    new Intl.NumberFormat("vi-VN").format(value)
+
   const handlePrintOrder = (order: LocalOrder) => {
     const content = `
 HOÀN ĐƠN HÀNG - XUÂN TÌNH NGUYỆN 2026
@@ -102,9 +116,9 @@ THÔNG TIN NGƯỜI ỦNG HỘ:
 - Địa chỉ: ${order.customerAddress || "Lấy tại khoa"}
 
 DANH SÁCH SẢN PHẨM:
-${order.items.map((item) => `- ${item.name} x${item.quantity}: ${((item.price * item.quantity) / 1000).toFixed(0)}K`).join("\n")}
+${order.items.map((item) => `- ${item.name} x${item.quantity}: ${formatVnd(item.price * item.quantity)} đ`).join("\n")}
 
-TỔNG TIỀN: ${(order.total / 1000).toFixed(0)}K
+TỔNG TIỀN: ${formatVnd(order.total)} đ
 
 PHƯƠNG THỨC THANH TOÁN: ${order.paymentMethod === "vietqr" ? "VietQR" : "Tiền mặt"}
 
@@ -131,24 +145,26 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
   })
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-pink-50 font-sans">
+    <main 
+        className={`min-h-screen bg-white pt-20`}
+    >
       <Navigation />
 
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3 text-balance">Đơn hàng của tôi</h1>
-          <p className="text-lg text-gray-600">Theo dõi và quản lý các đơn hàng ủng hộ của bạn</p>
+          <h1 className="text-4xl md:text-5xl font-bold text-[#a5c858] mb-3 text-balance">Đơn hàng của bạn</h1>
+          {/* <p className="text-lg text-gray-600">Theo dõi và quản lý các đơn hàng ủng hộ của bạn</p> */}
           <div className="flex flex-wrap items-center gap-3 mt-4">
             {isLoading && <span className="text-sm text-gray-500">Đang tải đơn hàng...</span>}
             {error && <span className="text-sm text-red-500">{error}</span>}
-            <Button variant="outline" size="sm" onClick={reload}>
+            <Button variant="outline" size="sm" className="hover:bg-[#a5c858]" onClick={reload}>
               Làm mới
             </Button>
           </div>
         </div>
 
         {/* Search Form */}
-        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-blue-100 mb-12 animate-fade-in">
+        <div className={`bg-white rounded-3xl shadow-xl p-8 border-2 border-[${COLOR_PRIMARY}20] mb-12 animate-fade-in`}>
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Tìm đơn hàng</h2>
           <form onSubmit={handleSearch} className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
@@ -158,7 +174,7 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
                   type="tel"
                   value={searchPhone}
                   onChange={(e) => setSearchPhone(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition-all duration-300 text-gray-900"
+                  className={`w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[${COLOR_PRIMARY}] transition-all duration-300 text-gray-900`}
                   placeholder="0912345678"
                 />
               </div>
@@ -168,14 +184,14 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
                   type="text"
                   value={searchOrderId}
                   onChange={(e) => setSearchOrderId(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition-all duration-300 text-gray-900"
+                  className={`w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[${COLOR_PRIMARY}] transition-all duration-300 text-gray-900`}
                   placeholder="ORD-..."
                 />
               </div>
             </div>
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 rounded-xl transition-all duration-300 shadow-lg"
+              className={`w-full bg-[${COLOR_PRIMARY}] hover:bg-[${COLOR_PRIMARY}e6] text-white font-semibold py-3 rounded-xl transform hover:scale-102 transition-all duration-300 shadow-lg`}
             >
               Tìm kiếm
             </Button>
@@ -184,7 +200,7 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
 
         {/* Selected Order Detail */}
         {selectedOrder && (
-          <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-blue-100 mb-12 animate-fade-in">
+          <div className={`bg-white rounded-3xl shadow-xl p-8 border-2 border-[${COLOR_PRIMARY}20] mb-12 animate-fade-in`}>
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">Chi tiết đơn hàng</h2>
@@ -229,7 +245,7 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
                       <p className="font-bold text-gray-900 text-lg">{selectedOrder.customerPhone}</p>
                       <button
                         onClick={() => handleCopy(selectedOrder.customerPhone, "phone")}
-                        className="text-blue-600 hover:text-blue-700"
+                        className={`text-[${COLOR_PRIMARY}] hover:text-[${COLOR_PRIMARY}a0]`}
                       >
                         {copied === "phone" ? <Check size={18} /> : <Copy size={18} />}
                       </button>
@@ -254,19 +270,30 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
                     {selectedOrder.items.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-pink-50 rounded-xl border border-gray-200"
+                        className={`flex items-center justify-between p-4 bg-[${COLOR_BG}50] rounded-xl border border-gray-200`}
                       >
                         <div className="flex items-center gap-4">
-                          <span className="text-4xl">{item.image}</span>
+                          
+                          {/* */}
+                          <div className="w-12 h-12 relative flex-shrink-0">
+                            <Image
+                              src={`/products/${item.image}.png`} 
+                              alt={item.name}
+                              layout="fill"
+                              objectFit="cover"
+                              className="rounded-full"
+                            />
+                          </div>
+                          
                           <div>
                             <p className="font-semibold text-gray-900">{item.name}</p>
                             <p className="text-sm text-gray-600">
-                              {(item.price / 1000).toFixed(0)}K × {item.quantity}
+                              {formatVnd(item.price)} đ × {item.quantity}
                             </p>
                           </div>
                         </div>
-                        <p className="font-bold text-blue-600 text-lg">
-                          {((item.price * item.quantity) / 1000).toFixed(0)}K
+                        <p className={`font-bold text-gray-900 text-lg`}>
+                          {formatVnd(item.price * item.quantity)} đ
                         </p>
                       </div>
                     ))}
@@ -275,30 +302,30 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
               </div>
 
               {/* Summary */}
-              <div className="bg-gradient-to-br from-blue-50 to-pink-50 rounded-2xl p-6 border-2 border-blue-200 h-fit">
+              <div className={`bg-[${COLOR_SECONDARY}] rounded-2xl p-6 border-2 border-[${COLOR_PRIMARY}30] h-fit`}>
                 <h3 className="font-bold text-xl text-gray-900 mb-6">Tóm tắt</h3>
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-gray-600">
                     <span>Tạm tính:</span>
-                    <span className="font-semibold text-gray-900">{(selectedOrder.total / 1000).toFixed(0)}K</span>
+                    <span className="font-semibold text-gray-900">{formatVnd(selectedOrder.total)} đ</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Phí ship:</span>
                     <span className="font-semibold text-gray-900">0đ</span>
                   </div>
                 </div>
-                <div className="border-t-2 border-blue-300 pt-4 mb-6">
+                <div className="border-t-2 border-gray-300 pt-4 mb-6">
                   <div className="flex justify-between">
                     <span className="font-bold text-gray-900">Tổng tiền:</span>
-                    <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
-                      {(selectedOrder.total / 1000).toFixed(0)}K
+                    <span className={`text-3xl font-bold text-gray-900`}>
+                      {formatVnd(selectedOrder.total)} đ
                     </span>
                   </div>
                 </div>
-                <div className="text-sm text-gray-600 mb-6">
+                <div className="text-sm text-gray-600 mb-6 flex">
                   <p className="font-medium mb-2">Phương thức:</p>
-                  <p className="font-bold text-gray-900">
-                    {selectedOrder.paymentMethod === "vietqr" ? "VietQR 🏦" : "Tiền mặt 💵"}
+                  <p className="font-bold text-gray-900 ml-1.5">
+                    {selectedOrder.paymentMethod === "vietqr" ? "VietQR" : "Tiền mặt"}
                   </p>
                 </div>
 
@@ -306,7 +333,7 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
                 <div className="space-y-3">
                   <Button
                     onClick={() => handlePrintOrder(selectedOrder)}
-                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-2 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
+                    className={`w-full bg-[${COLOR_PRIMARY}] hover:bg-[${COLOR_PRIMARY}e6] hover:scale-105 text-white font-semibold py-2 rounded-lg transition-all duration-300 flex items-center justify-center gap-2`}
                   >
                     <Download size={18} />
                     In đơn hàng
@@ -315,7 +342,7 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
                   {selectedOrder.status === "pending" && (
                     <Button
                       onClick={() => setShowCancelConfirm(true)}
-                      className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-2 rounded-lg transition-all duration-300"
+                      className={`w-full bg-white hover:bg-white hover:scale-105 text-gray-900 font-semibold py-2 rounded-lg transition-all duration-300`}
                     >
                       Huỷ đơn hàng
                     </Button>
@@ -336,13 +363,13 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
                   <div className="flex gap-3">
                     <Button
                       onClick={() => setShowCancelConfirm(false)}
-                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold py-2 rounded-lg transition-all duration-300"
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 hover:scale-105 font-semibold py-2 rounded-lg transition-all duration-300"
                     >
                       Không
                     </Button>
                     <Button
                       onClick={handleCancelOrder}
-                      className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-2 rounded-lg transition-all duration-300"
+                      className={`flex-1 bg-[${COLOR_PRIMARY}] hover:bg-[${COLOR_ACCENT}e6] hover:scale-105 text-white font-semibold py-2 rounded-lg transition-all duration-300`}
                     >
                       Huỷ đơn
                     </Button>
@@ -352,7 +379,7 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
             )}
 
             {selectedOrder.status === "pending" && !showCancelConfirm && (
-              <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded text-yellow-800">
+              <div className={`bg-[${COLOR_SECONDARY}50] border-l-4 border-[${COLOR_PRIMARY}] p-4 rounded text-gray-900`}>
                 <p className="font-semibold">💡 Lưu ý:</p>
                 <p>
                   Nếu vẫn chờ xác nhận, bạn có thể sao chép nội dung chuyển khoản và chuyển lại để đảm bảo. Hoặc huỷ đơn
@@ -365,7 +392,7 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
 
         {/* All Orders List */}
         {!selectedOrder && orders.length > 0 && (
-          <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-blue-100 animate-fade-in">
+          <div className={`bg-white rounded-3xl shadow-xl p-8 border-2 border-[${COLOR_PRIMARY}20] animate-fade-in`}>
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Lịch sử đơn hàng</h2>
 
             {/* Status Filter */}
@@ -383,7 +410,7 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
                   onClick={() => setStatusFilter(f.value as any)}
                   className={`px-4 py-2 rounded-full font-semibold transition-all duration-300 whitespace-nowrap ${
                     statusFilter === f.value
-                      ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg"
+                      ? `bg-[${COLOR_PRIMARY}] text-white shadow-lg`
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -403,7 +430,7 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
                   <button
                     key={order.id}
                     onClick={() => setSelectedOrder(order)}
-                    className="w-full text-left p-6 bg-gradient-to-r from-blue-50 to-pink-50 rounded-xl border-2 border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all duration-300 hover:scale-102"
+                    className={`w-full text-left p-6 bg-[${COLOR_BG}50] rounded-xl border-2 border-gray-200 hover:border-[${COLOR_PRIMARY}40] hover:shadow-lg transition-all duration-300 hover:scale-102`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -447,12 +474,12 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
                       </div>
                       <div className="text-right ml-4 flex flex-col items-end gap-2">
                         <p className="text-gray-500 text-sm">Tổng tiền</p>
-                        <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
-                          {(order.total / 1000).toFixed(0)}K
+                        <p className={`text-2xl font-bold text-[${COLOR_PRIMARY}]`}>
+                          {formatVnd(order.total)} đ
                         </p>
                         <Link
                           href={`/my-orders/${order.backendCode ?? order.id}`}
-                          className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
+                          className={`text-sm text-[${COLOR_PRIMARY}] hover:underline inline-flex items-center gap-1`}
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Eye size={16} />
@@ -468,14 +495,14 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
         )}
 
         {orders.length === 0 && !selectedOrder && (
-          <div className="bg-white rounded-3xl shadow-xl p-12 text-center border-2 border-blue-100 animate-fade-in">
+          <div className={`bg-white rounded-3xl shadow-xl p-12 text-center border-2 border-[${COLOR_PRIMARY}20] animate-fade-in`}>
             <p className="text-6xl mb-4">📦</p>
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Chưa có đơn hàng</h2>
             <p className="text-gray-600 mb-8 text-lg">
               Bạn chưa đặt hàng nào. Hãy ghé thăm cửa hàng để ủng hộ chiến dịch!
             </p>
             <Link href="/checkout">
-              <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-3 text-lg font-semibold rounded-xl transition-all duration-300 shadow-lg">
+              <Button className={`bg-[${COLOR_PRIMARY}] hover:bg-[${COLOR_PRIMARY}e6] text-white px-8 py-3 text-lg font-semibold rounded-xl transform hover:scale-105 transition-all duration-300 shadow-lg`}>
                 Đi đến cửa hàng
               </Button>
             </Link>
@@ -497,7 +524,7 @@ Cảm ơn bạn đã ủng hộ Xuân Tình Nguyện 2026!
         .animate-fade-in {
           animation: fade-in 0.3s ease-out;
         }
-        .hover\:scale-102:hover {
+        .hover\\:scale-102:hover {
           transform: scale(1.02);
         }
       `}</style>

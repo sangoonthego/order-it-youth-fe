@@ -29,6 +29,7 @@ COPY . .
 
 # Env build-time
 COPY .env.production .env.production
+ENV ORVAL_SPEC_URL=http://api.lcdkhoacntt-dut.live/docs-json
 
 # orval + build
 RUN pnpm orval && pnpm run build

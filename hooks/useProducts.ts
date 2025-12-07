@@ -14,14 +14,12 @@ export type MarketplaceProduct = {
   priceVersion: number
   stock: number
   badge?: string
-  emoji?: string
+  imageId: string 
   raw: {
     product: ProductResponseDto
     variant: ProductVariantDto
   }
 }
-
-const productEmojiFallbacks = ["🧢", "👕", "🎒", "🥤", "🧦", "🎁", "🎨", "🍪", "🍵", "📚"]
 
 const resolveDescription = (description: ProductResponseDto["description"]) => {
   if (!description) return undefined
@@ -51,9 +49,20 @@ export function useProducts() {
 
   const normalizeProducts = useCallback((list: ProductResponseDto[]) => {
     const normalized: MarketplaceProduct[] = []
-    list.forEach((product, index) => {
+    
+    list.forEach((product) => {
       if (!product.variants || product.variants.length === 0) {
         return
+      }
+      
+      const productName = product.name.trim()
+      let customImageId = product.id; // Giá trị mặc định là product.id
+
+      
+      if (productName.includes("Nui chiên")) {
+          customImageId = "nui-chien"; 
+      } else if (productName.includes("Su kem")) {
+          customImageId = "su-kem"; 
       }
 
       product.variants.forEach((variant) => {
@@ -66,7 +75,7 @@ export function useProducts() {
           priceVersion: variant.price_version,
           stock: variant.stock,
           badge: variant.sku,
-          emoji: productEmojiFallbacks[index % productEmojiFallbacks.length],
+          imageId: customImageId, 
           raw: {
             product,
             variant,

@@ -31,7 +31,7 @@ export default function OrdersLog() {
       const saved = localStorage.getItem("orders")
       if (saved) {
         const allOrders = JSON.parse(saved)
-        setOrders(allOrders.slice(0, 5))
+        setOrders(allOrders.slice(0, 6))
       }
       setLoading(false)
     }
@@ -42,7 +42,6 @@ export default function OrdersLog() {
       loadOrders()
     }
     
-
     window.addEventListener("order-completed", handleOrderCompleted)
     return () => window.removeEventListener("order-completed", handleOrderCompleted)
   }, [])
@@ -51,16 +50,19 @@ export default function OrdersLog() {
     return null
   }
 
+  const formatVnd = (value: number) =>
+      new Intl.NumberFormat("vi-VN").format(value)
+
   return (
     <section className="py-16 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-12">
-          <div className="inline-block px-4 py-2 bg-gradient-to-r from-blue-100 to-pink-100 text-blue-900 font-semibold rounded-full text-sm mb-4 animate-fade-in">
-            ✨ Ghi nhận ủng hộ
-          </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 text-balance">Những ủng hộ gần đây</h2>
-          <p className="text-lg text-gray-600 max-w-2xl">
-            Cảm ơn các bạn đã ủng hộ chiến dịch Xuân Tình Nguyện 2026. Dưới đây là những đơn hàng gần nhất từ cộng đồng.
+        <div className="mb-16 text-center">
+          {/* <div className="inline-block px-4 py-2 from-blue-100 to-pink-100 text-blue-900 font-semibold rounded-full text-sm mb-4 animate-fade-in">
+            Ghi nhận ủng hộ
+          </div> */}
+          <h2 className="text-4xl md:text-5xl font-bold text-[#a5c858] mb-4 text-balance">Những ủng hộ gần đây</h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Xin chân thành cảm ơn những trái tim nhân ái đã hưởng ứng lời kêu gọi. Sự ủng hộ của các bạn đã trở thành động lực to lớn cho Xuân Tình Nguyện. Dưới đây là những minh chứng đẹp đẽ của sự sẻ chia.
           </p>
         </div>
 
@@ -69,11 +71,11 @@ export default function OrdersLog() {
           {orders.map((order, idx) => (
             <div
               key={order.id}
-              className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl border-2 border-gray-100 hover:border-blue-300 transition-all duration-300 overflow-hidden animate-fade-in hover:scale-105"
+              className="group bg-[#fcedbe] rounded-2xl shadow-lg hover:shadow-2xl border-gray-100 hover:border-blue-300 transition-all duration-300 overflow-hidden animate-fade-in hover:scale-105"
               style={{ animationDelay: `${idx * 100}ms` }}
             >
               {/* Card Header */}
-              <div className="bg-gradient-to-r from-blue-50 to-pink-50 p-4 border-b border-gray-100">
+              <div className="from-blue-50 to-pink-50 p-4 border-b border-gray-100">
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <p className="text-sm font-semibold text-gray-600">Mã đơn</p>
@@ -86,8 +88,8 @@ export default function OrdersLog() {
               {/* Card Content */}
               <div className="p-5">
                 <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Người ủng hộ</p>
-                  <p className="font-bold text-gray-900">{order.customerName}</p>
+                  {/* <p className="text-sm font-medium text-gray-600 mb-1">Người ủng hộ</p> */}
+                  {/* <p className="font-bold text-gray-900">{order.customerName}</p> */}
                 </div>
 
                 {/* Items Summary */}
@@ -97,7 +99,7 @@ export default function OrdersLog() {
                     {order.items.slice(0, 2).map((item) => (
                       <div key={item.id} className="flex items-start justify-between gap-2">
                         <span className="text-sm text-gray-700 font-medium truncate flex-1">{item.name}</span>
-                        <span className="text-sm font-bold text-blue-600 whitespace-nowrap">×{item.quantity}</span>
+                        <span className="text-sm font-bold text-gray-700 whitespace-nowrap">x{item.quantity}</span>
                       </div>
                     ))}
                     {order.items.length > 2 && (
@@ -110,8 +112,8 @@ export default function OrdersLog() {
                 <div className="flex items-end justify-between pt-3 border-t border-gray-200">
                   <div>
                     <p className="text-xs text-gray-600 mb-1">Tổng tiền</p>
-                    <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent">
-                      {(order.total / 1000).toFixed(0)}K
+                    <p className="text-2xl font-bold bg-clip-text">
+                      {formatVnd(order.total)}đ
                     </p>
                   </div>
                   <div className="text-right">
@@ -129,14 +131,14 @@ export default function OrdersLog() {
         </div>
 
         {/* CTA Link */}
-        <div className="text-center">
-          <Link
+        <div className="text-center pt-10">
+          {/* <Link
             href="/my-orders"
-            className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+            className="inline-flex items-center gap-3 px-8 py-4 bg-[#a5c858] text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
           >
             Xem tất cả đơn hàng
             <ArrowRight size={20} />
-          </Link>
+          </Link> */}
         </div>
       </div>
 

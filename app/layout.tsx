@@ -14,6 +14,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Xuân Tình Nguyện 2026",
   description: "Chiến dịch tình nguyện mùa xuân 2026",
+  icons: {
+    icon: "/final_main_logo.png"
+  },
   generator: "v0.app",
 }
 
